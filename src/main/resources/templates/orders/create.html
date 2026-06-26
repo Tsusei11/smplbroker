@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nowe zlecenie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        .btn-outline-custom {
+            color: #8A2BE2;
+            border-color: #8A2BE2;
+        }
+        .btn-outline-custom:hover {
+            background-color: rgba(138, 43, 226, 0.05);
+            color: #8A2BE2;
+        }
+        .btn-check:checked + .btn-outline-custom {
+            background-color: #8A2BE2;
+            color: white;
+            border-color: #8A2BE2;
+        }
+
+        .form-minimal {
+            border: none;
+            border-bottom: 1px solid #ced4da;
+            border-radius: 0;
+            background-color: transparent;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .form-minimal:focus {
+            box-shadow: none;
+            border-color: #8A2BE2;
+            background-color: transparent;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/nav :: navbar}"></div>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm p-5">
+                <h3 th:if="${selectedAsset==null}" class="text-center mb-5 fw-bold">Złożenie zlecenia</h3>
+                <h3 th:if="${selectedAsset!=null}" class="text-center mb-5 fw-bold">Złożenie zlecenia: <span th:text="${selectedAsset.getTicker()}">$SPY</span></h3>
+
+                <div th:if="${errorMessage}" class="alert alert-dismissible text-white text-center shadow-sm mb-4 fade-in" style="background-color: #dc3545; border-radius: 6px; font-weight: 500;" role="alert">
+                    <span th:text="${errorMessage}">Błąd!</span>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <form action="/orders/summary" method="post" id="orderForm" novalidate>
+
+                    <input type="hidden" name="assetId" id="hiddenAsset" th:value="${selectedAsset.id}" th:if="${selectedAsset != null}" />
+
+                    <div id="step-asset" class="mb-5 fade-in" th:if="${selectedAsset == null}">
+                        <label class="form-label text-dark fw-bold small mb-1">Aktyw</label>
+                        <select name="assetId" class="form-select form-minimal text-muted" onchange="showWallet(); fetchAndCalculateEstimate();">
+                            <option value="" disabled selected>Wybierz aktyw</option>
+                            <option th:each="a : ${assets}" th:value="${a.id}" th:text="${a.ticker}" th:selected="${savedAssetId != null and savedAssetId == a.id}"></option>
+                        </select>
+                    </div>
+
+                    <div id="step-wallet" class="mb-5 d-none fade-in">
+                        <label class="form-label text-dark fw-bold small mb-1">Portfel</label>
+                        <select name="walletId" class="form-select form-minimal text-muted" onchange="showDirection()">
+                            <option value="" disabled selected>Wybierz portfel</option>
+                            <option th:each="w : ${wallets}" th:value="${w.id}" th:text="${w.name}" th:selected="${savedWalletId != null and savedWalletId == w.id}"></option>
+                        </select>
+                    </div>
+
+                    <div id="step-direction" class="mb-4 d-none justify-content-center fade-in">
+                        <div class="btn-group w-50 shadow-sm" role="group">
+                            <input type="radio" class="btn-check" name="direction" id="dirBuy" value="BUY" onchange="showType()" th:checked="${savedDirection != null and savedDirection.name() == 'BUY'}">
+                            <label class="btn btn-outline-custom w-50" for="dirBuy">Kupno</label>
+
+                            <input type="radio" class="btn-check" name="direction" id="dirSell" value="SELL" onchange="showType()" th:checked="${savedDirection != null and savedDirection.name() == 'SELL'}">
+                            <label class="btn btn-outline-custom w-50" for="dirSell">Sprzedaż</label>
+                        </div>
+                    </div>
+
+                    <div id="step-type" class="mb-5 d-none justify-content-center fade-in">
+                        <div class="btn-group w-50 shadow-sm" role="group">
+                            <input type="radio" class="btn-check" name="orderType" id="typeMarket" value="MARKET" onchange="showDetails()" th:checked="${savedOrderType != null and savedOrderType.name() == 'MARKET'}">
+                            <label class="btn btn-outline-custom w-50" for="typeMarket">Rynkowe</label>
+
+                            <input type="radio" class="btn-check" name="orderType" id="typeLimit" value="LIMIT" onchange="showDetails()" th:checked="${savedOrderType != null and savedOrderType.name() == 'LIMIT'}">
+                            <label class="btn btn-outline-custom w-50" for="typeLimit">Z limitem</label>
+                        </div>
+                    </div>
+
+                    <div id="step-details" class="d-none fade-in">
+
+                        <div class="mb-4">
+                            <label class="form-label text-dark fw-bold small mb-1">Kwota</label>
+                            <input type="text" inputmode="decimal" id="orderAmount" name="amount" class="form-control form-minimal text-muted" placeholder="Wpisz kwotę" oninput="enforceTwoDecimals(this); fetchAndCalculateEstimate();" th:value="${savedAmount}" />
+
+                        <div id="limitFields" style="display: none;">
+                            <div class="mb-4">
+                                <label class="form-label text-dark fw-bold small mb-1">Cena docelowa</label>
+                                <input type="text" inputmode="decimal" name="priceLimit" class="form-control form-minimal text-muted" placeholder="Wpisz cenę" oninput="enforceTwoDecimals(this)" th:value="${savedPriceLimit}" />
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label text-dark fw-bold small mb-1">Wybierz datę</label>
+                                <input type="datetime-local" name="expiration" class="form-control form-minimal text-muted" th:value="${savedExpiration}" />
+                            </div>
+                        </div>
+
+                        <div id="finalPriceText" class="mb-4 d-none text-muted small fw-bold">
+                            Cena szacowana: <span id="estPrice">0.0$</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-3 mt-5 pt-3">
+                        <button type="button" class="btn btn-outline-secondary px-5" id="btn-back" onclick="history.back()"><i class="bi bi-arrow-return-left me-1"></i> Wróć</button>
+                        <button type="submit" class="btn text-white px-5 d-none fade-in" id="btn-next" style="background-color: #8A2BE2;">Dalej</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var hasError = document.querySelector('.alert') !== null;
+        var hiddenAsset = document.getElementById('hiddenAsset');
+        var selectAsset = document.querySelector('select[name="assetId"]');
+
+        if (hiddenAsset || hasError || (selectAsset && selectAsset.value !== "")) {
+            showWallet();
+        }
+
+        if (hasError) {
+            showDirection();
+            showType();
+            showDetails();
+            fetchAndCalculateEstimate();
+        }
+    })
+
+    function enforceTwoDecimals(el) {
+        let val = el.value.replace(/,/g, '.');
+
+        val = val.replace(/[^0-9.]/g, '');
+
+        let parts = val.split('.');
+        if (parts.length > 2) {
+            val = parts[0] + '.' + parts.slice(1).join('');
+        }
+
+        if (val.includes('.')) {
+            let splitVal = val.split('.');
+            if (splitVal[1].length > 2) {
+                val = splitVal[0] + '.' + splitVal[1].substring(0, 2);
+            }
+        }
+
+        el.value = val;
+    }
+
+    async function fetchAndCalculateEstimate() {
+        var amountInput = document.getElementById('orderAmount').value;
+        var estPriceSpan = document.getElementById('estPrice');
+
+        var assetId = null;
+        var hiddenAsset = document.getElementById('hiddenAsset');
+
+        if (hiddenAsset) {
+            assetId = hiddenAsset.value;
+        } else {
+            var selectAsset = document.querySelector('select[name="assetId"]');
+            if (selectAsset && selectAsset.value) {
+                assetId = selectAsset.value;
+            }
+        }
+
+        if (assetId && amountInput > 0) {
+            try {
+                console.log("Wysyłam zapytanie o cenę dla aktywa ID: " + assetId);
+                let response = await fetch('/orders/api/price?assetId=' + assetId);
+
+                if (response.ok) {
+                    let currentPrice = await response.json();
+                    console.log("Otrzymany kurs: " + currentPrice);
+
+                    let total = (parseFloat(amountInput) * currentPrice).toFixed(2);
+                    estPriceSpan.innerText = total + " $";
+                } else {
+                    console.error("Błąd serwera HTTP: " + response.status);
+                }
+            } catch (e) {
+                console.error("Błąd zapytania fetch", e);
+                estPriceSpan.innerText = "Błąd";
+            }
+        } else {
+            estPriceSpan.innerText = "0.00 $";
+        }
+    }
+
+    function showWallet() {
+        document.getElementById('step-wallet').classList.remove('d-none');
+    }
+
+    function showDirection() {
+        document.getElementById('step-direction').classList.remove('d-none');
+        document.getElementById('step-direction').classList.add('d-flex');
+    }
+
+    function showType() {
+        document.getElementById('step-type').classList.remove('d-none');
+        document.getElementById('step-type').classList.add('d-flex');
+    }
+
+    function showDetails() {
+        document.getElementById('step-details').classList.remove('d-none');
+
+        var type = document.querySelector('input[name="orderType"]:checked').value;
+        var limitFields = document.getElementById('limitFields');
+        var finalPriceText = document.getElementById('finalPriceText');
+
+        if (type === 'LIMIT') {
+            limitFields.style.display = 'block';
+            finalPriceText.classList.add('d-none');
+            limitFields.querySelectorAll('input').forEach(i => i.required = true);
+        } else {
+            limitFields.style.display = 'none';
+            finalPriceText.classList.remove('d-none');
+            limitFields.querySelectorAll('input').forEach(i => i.required = false);
+
+            fetchAndCalculateEstimate();
+        }
+
+        var btnNext = document.getElementById('btn-next');
+        var btnBack = document.getElementById('btn-back');
+
+        btnNext.classList.remove('d-none');
+        btnBack.classList.remove('px-5');
+        btnBack.classList.add('w-50');
+        btnNext.classList.remove('px-5');
+        btnNext.classList.add('w-50');
+    }
+</script>
+
+<div th:replace="~{fragments/nav :: bootstrap-js}"></div>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Szczegóły Aktywa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/nav :: navbar}"></div>
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Szczegóły: <span class="text-success" th:text="'$' + ${asset.ticker}">$VOO</span></h2>
+
+    <div class="row bg-white p-4 rounded shadow-sm mb-5">
+        <div class="col-md-4 border-end d-flex flex-column justify-content-center">
+            <p class="d-flex justify-content-between text-muted mb-3 border-bottom pb-2">
+                <span>Nazwa:</span>
+                <span class="text-dark fw-bold text-end" th:text="${asset.name}">S&P 500</span>
+            </p>
+            <p class="d-flex justify-content-between text-muted mb-3 border-bottom pb-2">
+                <span>Typ:</span>
+                <span class="text-dark fw-bold" th:text="${asset.class.simpleName == 'Stock' ? 'Akcja' : 'ETF'}">ETF</span>
+            </p>
+
+            <div th:if="${asset.class.simpleName == 'Stock'}">
+                <p class="d-flex justify-content-between text-muted mb-3 border-bottom pb-2">
+                    <span>Kraj:</span>
+                    <span class="text-dark fw-bold text-end" th:text="${asset.originCountry}">Vanguard</span>
+                </p>
+                <p class="d-flex justify-content-between text-muted mb-5 border-bottom pb-2">
+                    <span>Branża:</span>
+                    <span class="text-dark fw-bold" th:text="${asset.branch}">Index</span>
+                </p>
+            </div>
+
+            <div th:if="${asset.class.simpleName == 'ETF'}">
+                <p class="d-flex justify-content-between text-muted mb-3 border-bottom pb-2">
+                    <span>Emitent:</span>
+                    <span class="text-dark fw-bold text-end" th:text="${asset.emittent}">Vanguard</span>
+                </p>
+                <p class="d-flex justify-content-between text-muted mb-5 border-bottom pb-2">
+                    <span>Rodzaj funduszu:</span>
+                    <span class="text-dark fw-bold" th:text="${asset.fundType}">Index</span>
+                </p>
+            </div>
+
+            <div class="d-flex gap-2 mt-auto">
+                <a th:href="${returnUrl}" class="btn btn-outline-secondary w-50"><i class="bi bi-arrow-return-left"></i> Wróć</a>
+                <a th:href="@{/orders/create/{id}(id=${asset.id})}" class="btn text-white w-50" style="background-color: #8A2BE2;">Złóż zlecenie</a>
+            </div>
+        </div>
+
+        <div class="col-md-8 ps-4">
+            <div class="w-100 rounded bg-dark d-flex align-items-center justify-content-center flex-column" style="height: 350px;">
+                <i class="bi bi-graph-up text-success mb-2" style="font-size: 3rem;"></i>
+                <span class="text-secondary font-monospace">Wykres na żywo</span>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-4 text-muted">Twoje 3 ostatnie zlecenia dla <span th:text="${asset.ticker}"></span></h4>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="bg-white p-4 rounded shadow-sm h-100">
+                <h5 class="text-dark mb-3">Zlecenia Rynkowe</h5>
+                <table class="table table-hover align-middle table-sm">
+                    <thead class="table-light text-muted">
+                    <tr>
+                        <th>Typ</th>
+                        <th>Kwota</th>
+                        <th>Data</th>
+                        <th>Cena końcowa</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="order : ${marketOrders}">
+                        <td class="fw-bold" th:text="${order.direction.name() == 'BUY' ? 'KUPNO' : 'SPRZEDAŻ'}">KUPNO</td>
+                        <td th:text="${order.amount}">0.8</td>
+                        <td th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}">05.05 14:38</td>
+                        <td th:if="${order.finalPrice != null}" th:text="${#numbers.formatDecimal(order.finalPrice, 1, 'NONE', 2, 'POINT')}">150.0</td>
+                        <td th:if="${order.finalPrice == null}">—</td>
+                        <td class="fw-bold"
+                            th:classappend="${
+                                order.status.name() == 'EXECUTED' ? 'text-success' :
+                                (order.status.name() == 'CANCELED' ? 'text-danger' :
+                                'text-secondary')
+                            }"
+                            th:text="${
+                                order.status.name() == 'NEW' ? 'NOWE' :
+                                (order.status.name() == 'PENDING' ? 'OCZEKUJĄCE' :
+                                (order.status.name() == 'EXECUTED' ? 'ZREALIZOWANE' :
+                                (order.status.name() == 'CANCELED' ? 'ANULOWANE' :
+                                (order.status.name() == 'EXPIRED' ? 'WYGAŚNIĘTE' : order.status.name()))))
+                            }">
+                            ZREALIZOWANE
+                        </td>
+                    </tr>
+                    <tr th:if="${marketOrders.isEmpty()}"><td colspan="4" class="text-center text-muted">Brak zleceń</td></tr>
+                    </tbody>
+                </table>
+                <a th:href="@{/orders/history/market}" class="btn btn-outline-secondary w-50">Przejdź do pełnej historii <i class="bi bi-box-arrow-up-right"></i></a>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="bg-white p-4 rounded shadow-sm h-100">
+                <h5 class="text-dark mb-3">Zlecenia z Limitem</h5>
+                <table class="table table-hover align-middle table-sm">
+                    <thead class="table-light text-muted">
+                    <tr>
+                        <th>Typ</th>
+                        <th>Kwota</th>
+                        <th>Limit</th>
+                        <th>Cena końcowa</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="order : ${limitOrders}">
+                        <td class="fw-bold" th:text="${order.direction.name() == 'BUY' ? 'KUPNO' : 'SPRZEDAŻ'}">KUPNO</td>
+                        <td th:text="${order.amount}">0.8</td>
+                        <td th:text="${order.priceLimit}">150.0</td>
+                        <td th:if="${order.finalPrice != null}" th:text="${#numbers.formatDecimal(order.finalPrice, 1, 'NONE', 2, 'POINT')}">150.0</td>
+                        <td th:if="${order.finalPrice == null}">—</td>
+                        <td class="fw-bold"
+                            th:classappend="${
+                                order.status.name() == 'EXECUTED' ? 'text-success' :
+                                (order.status.name() == 'CANCELED' ? 'text-danger' :
+                                'text-secondary')
+                            }"
+                            th:text="${
+                                order.status.name() == 'NEW' ? 'NOWE' :
+                                (order.status.name() == 'PENDING' ? 'OCZEKUJĄCE' :
+                                (order.status.name() == 'EXECUTED' ? 'ZREALIZOWANE' :
+                                (order.status.name() == 'CANCELED' ? 'ANULOWANE' :
+                                (order.status.name() == 'EXPIRED' ? 'WYGAŚNIĘTE' : order.status.name()))))
+                            }">
+                            ZREALIZOWANE
+                        </td>
+                    </tr>
+                    <tr th:if="${limitOrders.isEmpty()}"><td colspan="5" class="text-center text-muted">Brak zleceń</td></tr>
+                    </tbody>
+                </table>
+                <a th:href="@{/orders/history/limit}" class="btn btn-outline-secondary w-50">Przejdź do pełnej historii <i class="bi bi-box-arrow-up-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{fragments/nav :: bootstrap-js}"></div>
+</body>
+</html>

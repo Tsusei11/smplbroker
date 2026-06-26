@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Portfele</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/nav :: navbar}"></div>
+
+<div class="container mt-5">
+    <h2 class="text-center mb-5">Portfele</h2>
+
+    <div class="row g-4">
+        <div class="col-md-6" th:each="wallet : ${wallets}">
+            <div class="card border-0 shadow-sm h-100 p-3">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold mb-4" th:text="${wallet.name}">Portfel #1</h5>
+
+                    <p class="mb-1 text-muted">
+                        Waluta: <span class="fw-bold text-dark" th:text="${wallet.currency.isoCode}">USD</span>
+                    </p>
+                    <p class="mb-1 text-muted">
+                        Saldo dostępne:
+                        <span class="text-dark" th:text="${wallet.availableBalance} + ' ' + ${wallet.currency.isoCode}">765.38 USD</span>
+                    </p>
+                    <p class="mb-4 text-muted">
+                        Saldo zablokowane:
+                        <span class="text-dark" th:text="${wallet.blockedBalance} + ' ' + ${wallet.currency.isoCode}">98.76 USD</span>
+                    </p>
+
+                    <div class="d-flex gap-3 mt-auto">
+                        <a th:href="@{/wallets/{id}(id=${wallet.id})}" class="text-decoration-none text-muted" style="color: #8A2BE2 !important;">Szczegóły</a>
+                        <a href="#" class="text-decoration-none text-muted">Zarządzaj</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div th:replace="~{fragments/nav :: bootstrap-js}"></div>
+</body>
+</html>

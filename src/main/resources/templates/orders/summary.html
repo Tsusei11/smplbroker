@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Podsumowanie zlecenia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .summary-label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 0.2rem;
+        }
+        .summary-value {
+            color: #adb5bd;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+<div th:replace="~{fragments/nav :: navbar}"></div>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm p-5">
+                <h3 class="text-center mb-5 fw-bold">Podsumowanie zlecenia</h3>
+
+                <div class="px-3">
+                    <div class="summary-label">Aktyw</div>
+                    <div class="summary-value" th:text="${asset.ticker}">AAPL</div>
+
+                    <div class="summary-label">Portfel</div>
+                    <div class="summary-value" th:text="${wallet.name}">Portfel 1</div>
+
+                    <div class="summary-label">Kierunek</div>
+                    <div class="summary-value" th:text="${direction.name() == 'BUY' ? 'Kupno' : 'Sprzedaż'}">Kupno</div>
+
+                    <div class="summary-label">Typ zlecenia</div>
+                    <div class="summary-value" th:text="${orderType.name() == 'MARKET' ? 'Rynkowe' : 'Z limitem'}">Rynkowe</div>
+
+                    <div class="summary-label">Kwota</div>
+                    <div class="summary-value" th:text="${amount}">1.78</div>
+
+                    <th:block th:if="${orderType.name() == 'LIMIT'}">
+                        <div class="summary-label">Cena docelowa</div>
+                        <div class="summary-value" th:text="${priceLimit} + '$'">33,3$</div>
+
+                        <div class="summary-label">Data wygaśnięcia</div>
+                        <div class="summary-value" th:text="${#temporals.format(expiration, 'dd.MM.yyyy HH:mm')}">26.05.2026 12:00</div>
+
+                        <div class="summary-label" th:if="${direction.name() == 'BUY'}">Do zablokowania</div>
+                        <div class="summary-label" th:if="${direction.name() == 'SELL'}">Zysk minimalny</div>
+                        <div class="summary-value" th:text="${estimatedPrice != null ? estimatedPrice + '$' : 'Brak danych'}">33,3$</div>
+                    </th:block>
+
+                    <th:block th:if="${orderType.toString() == 'MARKET'}">
+                        <div class="summary-label">Cena końcowa</div>
+                        <div class="summary-value" th:text="${estimatedPrice != null ? estimatedPrice + '$' : 'Brak danych'}">33,3$</div>
+                    </th:block>
+                </div>
+
+                <form action="/orders/confirm" method="post" class="mt-4">
+                    <input type="hidden" name="walletId" th:value="${wallet.id}" />
+                    <input type="hidden" name="assetId" th:value="${asset.id}" />
+                    <input type="hidden" name="direction" th:value="${direction}" />
+                    <input type="hidden" name="orderType" th:value="${orderType}" />
+                    <input type="hidden" name="amount" th:value="${amount}" />
+                    <input type="hidden" name="priceLimit" th:value="${priceLimit}" th:if="${priceLimit != null}" />
+                    <input type="hidden" name="expiration" th:value="${expiration}" th:if="${expiration != null}" />
+
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <button type="button" class="btn btn-outline-secondary w-50" onclick="history.back()"><i class="bi bi-arrow-return-left me-1"></i> Wróć</button>
+                        <button type="submit" class="btn text-white w-50" style="background-color: #8A2BE2;">Potwierdź</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{fragments/nav :: bootstrap-js}"></div>
+</body>
+</html>

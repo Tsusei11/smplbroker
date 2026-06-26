@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Historia zleceń z limitem</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/nav :: navbar}"></div>
+
+<div class="container mt-5">
+    <h2 class="text-center mb-5 fw-bold">Twoje zlecenia z limitem</h2>
+
+    <div class="bg-white p-4 rounded shadow-sm">
+        <table class="table table-hover align-middle table-borderless border-bottom">
+            <thead class="border-bottom text-muted small">
+            <tr>
+                <th class="pb-3">#</th>
+                <th class="pb-3">Kierunek</th>
+                <th class="pb-3">Symbol</th>
+                <th class="pb-3">Portfel</th>
+                <th class="pb-3">Kwota</th>
+                <th class="pb-3">Cena końcowa</th>
+                <th class="pb-3">Status</th>
+                <th class="pb-3 text-end"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="order : ${orders}" class="border-bottom">
+                <td class="fw-bold text-muted py-3" th:text="${order.number}">4</td>
+
+                <td class="fw-bold" th:text="${order.direction.name() == 'BUY' ? 'KUPNO' : 'SPRZEDAŻ'}">KUPNO</td>
+
+                <td class="text-muted" th:text="${order.pair.asset.ticker}">AAPL</td>
+
+                <td class="text-muted" th:text="${order.wallet.name}">Portfel #2</td>
+
+                <td class="text-muted" th:text="${order.amount}">1.00</td>
+
+                <td th:if="${order.finalPrice != null}" th:text="${#numbers.formatDecimal(order.finalPrice, 1, 'NONE', 2, 'POINT')}">150.0</td>
+                <td th:if="${order.finalPrice == null}">—</td>
+
+                <td class="fw-bold"
+                    th:classappend="${
+                                order.status.name() == 'EXECUTED' ? 'text-success' :
+                                (order.status.name() == 'PENDING' ? 'text-secondary' :
+                                (order.status.name() == 'CANCELED' ? 'text-danger' :
+                                (order.status.name() == 'EXPIRED' ? 'text-warning' : 'text-primary')))
+                            }"
+                    th:text="${
+                                order.status.name() == 'NEW' ? 'NOWE' :
+                                (order.status.name() == 'PENDING' ? 'OCZEKUJĄCE' :
+                                (order.status.name() == 'EXECUTED' ? 'ZREALIZOWANE' :
+                                (order.status.name() == 'CANCELED' ? 'ANULOWANE' :
+                                (order.status.name() == 'EXPIRED' ? 'WYGAŚNIĘTE' : order.status.name()))))
+                            }">
+                    OCZEKUJĄCE
+                </td>
+
+                <td class="text-end">
+                    <a th:href="@{/orders/{id}(id=${order.number})}" class="text-decoration-none">
+                        Szczegóły <i class="bi bi-box-arrow-up-right ms-1"></i>
+                    </a>
+                </td>
+            </tr>
+            <tr th:if="${orders.isEmpty()}">
+                <td colspan="7" class="text-center text-muted py-5">Brak historii zleceń z limitem</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div th:replace="~{fragments/nav :: bootstrap-js}"></div>
+</body>
+</html>

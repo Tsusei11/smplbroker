@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Szczegóły zlecenia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .summary-label { font-size: 0.8rem; font-weight: bold; color: #6c757d; margin-bottom: 0.2rem; }
+        .summary-value { color: #212529; margin-bottom: 1.2rem; font-weight: 500; }
+    </style>
+</head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/nav :: navbar}"></div>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm p-5">
+                <h3 class="text-center mb-5 fw-bold">Szczegóły zlecenia</h3>
+
+                <div class="px-3">
+                    <div class="summary-label">Numer</div>
+                    <div class="summary-value" th:text="${order.number}">2983759121</div>
+
+                    <div class="summary-label">Aktyw</div>
+                    <div class="summary-value" th:text="${order.pair.asset.ticker}">AAPL</div>
+
+                    <div class="summary-label">Portfel</div>
+                    <div class="summary-value" th:text="${order.wallet.name}">Portfel 1</div>
+
+                    <div class="summary-label">Kierunek</div>
+                    <div class="summary-value" th:text="${order.direction.name() == 'BUY' ? 'Kupno' : 'Sprzedaż'}">Kupno</div>
+
+                    <div class="summary-label">Typ zlecenia</div>
+                    <div class="summary-value" th:text="${order.class.simpleName == 'MarketOrder' ? 'Rynkowe' : 'Z limitem'}">Rynkowe</div>
+
+                    <div class="summary-label">Kwota</div>
+                    <div class="summary-value" th:text="${order.amount}">1.78</div>
+
+                    <th:block th:if="${order.class.simpleName == 'LimitOrder'}">
+                        <div class="summary-label">Cena docelowa</div>
+                        <div class="summary-value" th:text="${order.priceLimit} + '$'">33,3$</div>
+
+                        <div class="summary-label">Data wygaśnięcia</div>
+                        <div class="summary-value" th:text="${#temporals.format(order.expirationDateTime, 'dd.MM.yyyy HH:mm')}">26.05.2026</div>
+                    </th:block>
+
+                    <th:block th:if="${order.finalPrice != null}">
+                        <div class="summary-label">Cena końcowa</div>
+                        <div class="summary-value" th:text="${#numbers.formatDecimal(order.finalPrice, 1, 'NONE', 2, 'POINT')} + '$'">33,3$</div>
+                    </th:block>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="button" class="btn btn-outline-secondary px-5" onclick="history.back()">Wróć</button>
+                </div>
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <div class="mt-4" th:if="${order.status.name() == 'NEW' or order.status.name() == 'PENDING'}">
+                    <form th:action="@{/orders/{id}/cancel(id=${order.number})}" method="post" onsubmit="return confirm('Czy na pewno chcesz anulować to zlecenie? Środki zostaną odblokowane.');">
+                        <button type="submit" class="btn btn-outline-danger w-100">
+                            <i class="bi bi-x-circle"></i> Anuluj zlecenie
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/nav :: bootstrap-js}"></div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pl-PL">
+<head>
+    <meta charset="UTF-8">
+    <title>Dostępne aktywa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+</head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/nav :: navbar}"></div>
+
+<div class="container mt-5 bg-white p-4 rounded shadow-sm">
+    <h2 class="text-center mb-4">Dostępne aktywa</h2>
+
+    <div class="d-flex justify-content-between mb-4">
+        <form action="/market" method="get" class="w-50">
+            <div class="input-group">
+                <input type="text"
+                       name="q"
+                       class="form-control"
+                       placeholder="Wyszukaj"
+                       th:value="${query}"
+                       style="border-radius: 4px 0 0 4px; border: 1px solid #8A2BE2; border-right: none;">
+
+                <button type="submit" class="btn" style="background-color: #8A2BE2; border: 1px solid #8A2BE2; border-radius: 0 4px 4px 0;">
+                    <i class="bi bi-search" style="color: white;"></i>
+                </button>
+            </div>
+        </form>
+
+        <a href="/orders/create" class="btn text-white " style="background-color: #8A2BE2;">Złóż zlecenie</a>
+    </div>
+
+    <table class="table table-hover align-middle">
+        <thead class="table-light text-muted">
+        <tr>
+            <th>#</th>
+            <th>Symbol</th>
+            <th>Nazwa</th>
+            <th>Typ</th>
+            <th>Kurs</th>
+            <th class="text-end"></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="asset, iterStat : ${assets}">
+            <td th:text="${iterStat.count}">1</td>
+            <td class="fw-bold" th:text="${asset.ticker}">AAPL</td>
+            <td class="text-muted" th:text="${asset.name}">Apple Inc</td>
+            <td th:text="${asset.class.simpleName == 'Stock' ? 'Akcja' : 'ETF'}">Akcja</td>
+            <td class="fw-bold text-success"
+                th:text="${prices.containsKey(asset.id) ? prices.get(asset.id) + ' USD' : 'Brak danych'}">
+                185.50 USD
+            </td>
+            <td class="text-end">
+                <a th:href="@{/market/{id}(id=${asset.id})}" class="text-decoration-none">
+                    Szczegóły <i class="bi bi-box-arrow-up-right"></i>
+                </a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div th:replace="~{fragments/nav :: bootstrap-js}"></div>
+</body>
+</html>
