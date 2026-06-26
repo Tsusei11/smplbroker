@@ -40,16 +40,16 @@ The core value of this project lies in its architectural maturity and adherence 
 
 ### Installation
 Clone the repository:
-`git clone [[https://github.com/yourusername/simple-broker.git](https://github.com/yourusername/simple-broker.git)](https://github.com/Tsusei11/smplbroker.git)`
+```git clone [[https://github.com/yourusername/simple-broker.git](https://github.com/yourusername/simple-broker.git)](https://github.com/Tsusei11/smplbroker.git)```
 
 Navigate to the project directory:
-`cd simple-broker`
+```cd simple-broker```
 
 Build the project using Maven:
-`mvn clean install`
+```mvn clean install```
 
 Run the application:
-`mvn spring-boot:run`
+```mvn spring-boot:run```
 
-##📄 Documentation
+##📄Documentation
 The complete technical documentation, including system requirements, UI wireframes, and extensive UML models, was developed as part of the Information Systems Modeling and Analysis (MAS) course.
